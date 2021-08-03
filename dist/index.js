@@ -50,19 +50,23 @@ __webpack_require__.r(__webpack_exports__);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ((oldVnode,newVnode)=>{
   console.log(oldVnode,newVnode)
+  let newNodeElm
   if(!isVnode(oldVnode)){
     //不是虚拟dom,转化为虚拟dom再做比较
-    oldVnode= (0,_vnode__WEBPACK_IMPORTED_MODULE_0__.vnode)(oldVnode.getAttribute('id'),undefined,undefined,undefined,oldVnode)
+    oldVnode= (0,_vnode__WEBPACK_IMPORTED_MODULE_0__.vnode)(oldVnode.tagName.toLowerCase(),{},[],undefined,oldVnode)
   }
   if(isSameVnode(oldVnode,newVnode)){
     //是相同的vnode,进行递归比较后替换
-    console.log('是相同的vnode')
+    newNodeElm=patchSameVnode(oldVnode,newVnode)
   }else{
     //不是相同vnode,暴力删除替换
-    console.log('不是相同dom')
-    const node = createElm(newVnode)
-    document.body.appendChild(node)
+    newNodeElm = createElm(newVnode)
+    if(oldVnode.elm.parentNode && newNodeElm){
+      oldVnode.elm.parentNode.insertBefore(newNodeElm,oldVnode.elm)
+    }
+    oldVnode.elm.parentNode.removeChild(oldVnode.elm)
   }
+  return newVnode
 });
 
 const isVnode = (vnode)=>{
@@ -77,15 +81,56 @@ const createElm=(vnode)=>{
       dom.appendChild(childDom)
     });
   }
-  if(typeof vnode.text === 'string'){
-    dom.append(vnode.text)
+  if(typeof vnode.text === 'string' &&( vnode.children === undefined || vnode.children.length ===0 )){
+    dom.innerText=vnode.text
   }
-  return dom
+  vnode.elm = dom
+  return vnode.elm
 }
 
 const isSameVnode=(oldVnode,newVnode)=>{
   return oldVnode.key===newVnode.key && oldVnode.sel === newVnode.sel
 }
+
+const patchSameVnode  = (oldVnode,newVnode)=>{
+  if(!Object.is(oldVnode,newVnode)){
+    if(newVnode.text!=undefined && (newVnode.children===undefined || newVnode.children.length ===0 )){
+      //newVnode没有children
+      if(newVnode.text !== oldVnode.text){
+        oldVnode.elm.innerText = newVnode.text
+      }
+    } else{
+      //newVnode有children且oldVnode有children
+      let un=0
+      if(oldVnode.children!==undefined && oldVnode.children.length >0){
+        newVnode.children.forEach((newChild,i)=>{
+          const sameNode = oldVnode.children.find(oldChild=>newChild.key===oldChild.key && newChild.sel===oldChild.sel)
+          if(!sameNode){
+            let dom = createElm(newChild)
+            newChild.elm = dom
+            if(un < oldVnode.children.length){
+              oldVnode.elm.insertBefore(dom,oldVnode.children[un].elm)
+            }else{
+              oldVnode.elm.appendChild(dom)
+            }
+          }else{
+            un++
+          }
+        })
+      }else{
+        //oldVnode没有children且newVnode有children
+        oldVnode.elm.innerText=''
+        for(const key in newVnode.children){
+          const childDom = createElm(newVnode.children[key])
+          oldVnode.elm.appendChild(childDom)
+        }
+      }
+    }
+    newVnode.elm = oldVnode.elm
+    return newVnode
+  }
+}
+
 
 /***/ }),
 
@@ -173,15 +218,30 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _self_snabbdom_patch__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./self-snabbdom/patch */ "./src/self-snabbdom/patch.js");
 
 
-const vnode = (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("div", { }, 
-  [
-    (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("div", { style: { fontWeight: "bold" } }, "This is bold"),
-    (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("div", { style: { fontWeight: "bold" } }, "hahaha"),
-    (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("div", { style: { fontWeight: "bold" } }, "beautiful"),
-  ],
-);
+let vnode =(0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)('ul',{},
+    [
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'A'  }, "A"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'B' }, "B"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'C' }, "C"),
+    ],
+  )
+
+
+const btn = document.getElementById('btn')
+btn.onclick=()=>{
+  let newVnode = (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)('ul',{},
+    [
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'A'  }, "A"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'B' }, "B"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'S' }, "S"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'C' }, "C"),
+      (0,_self_snabbdom_h__WEBPACK_IMPORTED_MODULE_0__.h)("li", { key:'D' }, "D"),
+    ],
+  )
+  ;(0,_self_snabbdom_patch__WEBPACK_IMPORTED_MODULE_1__.default)(vnode,newVnode)
+}
 const container = document.querySelector('#container')
-;(0,_self_snabbdom_patch__WEBPACK_IMPORTED_MODULE_1__.default)(container,vnode)
+vnode = (0,_self_snabbdom_patch__WEBPACK_IMPORTED_MODULE_1__.default)(container,vnode)
 
 })();
 

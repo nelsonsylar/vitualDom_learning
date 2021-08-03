@@ -1,11 +1,26 @@
 import {h} from './self-snabbdom/h'
 import patch from './self-snabbdom/patch'
-const vnode = h("div", { }, 
-  [
-    h("div", { style: { fontWeight: "bold" } }, "This is bold"),
-    h("div", { style: { fontWeight: "bold" } }, "hahaha"),
-    h("div", { style: { fontWeight: "bold" } }, "beautiful"),
-  ],
-);
+let vnode =h('ul',{},
+    [
+      h("li", { key:'A'  }, "A"),
+      h("li", { key:'B' }, "B"),
+      h("li", { key:'C' }, "C"),
+    ],
+  )
+
+
+const btn = document.getElementById('btn')
+btn.onclick=()=>{
+  let newVnode = h('ul',{},
+    [
+      h("li", { key:'A'  }, "A"),
+      h("li", { key:'B' }, "B"),
+      h("li", { key:'S' }, "S"),
+      h("li", { key:'C' }, "C"),
+      h("li", { key:'D' }, "D"),
+    ],
+  )
+  patch(vnode,newVnode)
+}
 const container = document.querySelector('#container')
-patch(container,vnode)
+vnode = patch(container,vnode)
